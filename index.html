@@ -40,12 +40,8 @@ button{font:inherit;color:inherit;border:0;background:none;padding:0;-webkit-app
 #wnow{font-size:72px;font-weight:200;line-height:1}
 #wdesc{font-size:24px;margin-left:18px}
 #wmeta{font-size:16px;color:var(--mu);margin-top:8px}
-#fc{display:flex;margin-top:14px}
-.fd{flex:1;text-align:center;background:var(--bg);border-radius:14px;padding:10px 4px;margin-right:10px}
-.fd:last-child{margin-right:0}
-.fd b{display:block;font-size:15px;font-weight:600;color:var(--mu)}
-.fd i{display:block;font-style:normal;font-size:30px;margin:2px 0}
-.fd span{font-size:16px}
+#irm{margin-top:14px;position:relative;overflow:hidden;height:91px}
+#irmf{position:absolute;left:0;top:0;width:537px;height:91px;border:0;-webkit-transform-origin:0 0;transform-origin:0 0}
 #ag{flex:1;margin-top:18px;display:flex;flex-direction:column;min-height:0}
 #evs{flex:1;overflow:hidden;position:relative}
 #evs iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
@@ -93,7 +89,7 @@ background:#f6d9c8;color:#4b4a57;-webkit-animation:pulse 2s infinite;animation:p
       <div class="lbl"><span id="wcity">Météo</span><span id="wst"></span></div>
       <div class="top"><div id="wico"></div><div id="wnow">--°</div><div id="wdesc"></div></div>
       <div id="wmeta"></div>
-      <div id="fc"></div>
+      <div id="irm"><iframe id="irmf" scrolling="no" frameborder="0" marginwidth="0" marginheight="0" width="537" height="91"></iframe></div>
     </div>
     <div class="card" id="ag">
       <div class="lbl"><span>Agenda</span><span id="cst"></span></div>
@@ -117,6 +113,7 @@ background:#f6d9c8;color:#4b4a57;-webkit-animation:pulse 2s infinite;animation:p
 var CFG = {
   ville: "Vilvoorde",
   lat: 50.93, lon: 4.43,
+  irmUrl: "https://www.meteo.be/services/widget/.?postcode=1800&nbDay=3&type=9&lang=fr&bgImageId=0&bgColor=transparent&scrolChoice=1&colorTempMax=c9826b&colorTempMin=6f93b5",
   calUrl: "https://script.google.com/macros/s/AKfycbwS9K60PAd8nU33CzYEbJv5t8C0IJB6ATeUwtSZ0JGjJj2S6mpIv6EnrZg76-rHql3F/exec",
   calKey: "",    // laisser vide : la clé est saisie une fois sur l’iPad (stockée dans localStorage)
   calEmbed: ""   // alternative : URL d’intégration Google Agenda (agenda public)
@@ -308,10 +305,22 @@ function wx(c) {
   if (c <= 86) return ["❄️", "Averses de neige"];
   return ["⛈️", "Orage"];
 }
+function fitIrm() {   // le widget IRM est fixe (537 x 91) : on le réduit pour qu’il tienne dans la carte
+  var w = $("irm").clientWidth, k = Math.min(1, w / 537);
+  ui(function () {
+    $("irmf").style.webkitTransform = "scale(" + k + ")";
+    $("irmf").style.transform = "scale(" + k + ")";
+    $("irm").style.height = Math.round(91 * k) + "px";
+  });
+}
+function loadIrm() { $("irmf").src = CFG.irmUrl; fitIrm(); }
+window.addEventListener("resize", fitIrm, false);
+window.addEventListener("orientationchange", fitIrm, false);
 function loadWeather() {
+  loadIrm();
   txt("wcity", "Météo · " + CFG.ville);
   var u = "https://api.open-meteo.com/v1/forecast?latitude=" + CFG.lat + "&longitude=" + CFG.lon +
-    "&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=4";
+    "&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=1";
   getJSON(u, function (r) {
     txt("wst", "");
     ui(function () {
@@ -321,15 +330,6 @@ function loadWeather() {
     $("wdesc").textContent = w[1];
     $("wmeta").textContent = "Min " + Math.round(d.temperature_2m_min[0]) + "° · Max " + Math.round(d.temperature_2m_max[0]) +
       "° · Pluie " + (d.precipitation_probability_max[0] || 0) + " % · Vent " + Math.round(c.windspeed) + " km/h";
-    box = $("fc"); clear(box);
-    for (i = 1; i < d.time.length; i++) {
-      q = d.time[i].split("-");
-      f = el("div", "fd");
-      f.appendChild(el("b", "", J[new Date(+q[0], +q[1] - 1, +q[2]).getDay()].slice(0, 3)));
-      f.appendChild(el("i", "", wx(d.weathercode[i])[0]));
-      f.appendChild(el("span", "", Math.round(d.temperature_2m_min[i]) + "° / " + Math.round(d.temperature_2m_max[i]) + "°"));
-      box.appendChild(f);
-    }
     });
   }, function () { txt("wst", "Hors ligne"); });
 }
@@ -337,7 +337,7 @@ function loadWeather() {
 /* ===== AGENDA (Google Agenda via Apps Script, JSONP) ===== */
 function msg(t) { var b = $("evs"); clear(b); b.appendChild(el("div", "msg", t)); }
 function renderCalNow(ev) {
-  var BUDGET = 5;   // hauteur disponible : 1 par rendez-vous, 0,7 par en-tête de jour (à ajuster)
+  var BUDGET = 7;   // hauteur disponible : 1 par rendez-vous, 0,7 par en-tête de jour (à ajuster)
   var now = new Date().getTime(), box = $("evs"), used = 0, last = -1, i, e, sd, s0, df, row;
   var t0 = new Date(); t0.setHours(0, 0, 0, 0);
   clear(box);

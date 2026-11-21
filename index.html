@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dashboard">
+<meta name="format-detection" content="telephone=no">
+<style>
+:root{--bg:#f3eee7;--card:#fbf8f3;--tx:#4b4a57;--mu:#8e8a99;--ac:#7fb3a3;--ac2:#e7b7a3;--ln:#e6dfd5}
+body.night{--bg:#24232b;--card:#2d2c35;--tx:#b9b4c6;--mu:#7d788a;--ac:#5f8f82;--ac2:#a97f70;--ln:#3a3943}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{font-family:-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;background:var(--bg);color:var(--tx);
+-webkit-text-size-adjust:100%;-webkit-user-select:none;-webkit-tap-highlight-color:rgba(0,0,0,0);-webkit-touch-callout:none}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;-webkit-appearance:none;border-radius:0}
+#app{display:flex;height:100%;padding:30px 22px 22px}
+#left{width:46%;display:flex;flex-direction:column;margin-right:18px}
+#right{flex:1;min-width:0;display:flex;flex-direction:column}
+.card{background:var(--card);border-radius:22px;padding:20px 24px}
+.lbl{font-size:15px;letter-spacing:1px;text-transform:uppercase;color:var(--mu);margin-bottom:10px;display:flex;justify-content:space-between}
+#clock{flex:1;display:flex;flex-direction:column;justify-content:center}
+#hm{font-size:120px;font-weight:200;line-height:1;letter-spacing:-2px;font-variant-numeric:tabular-nums}
+#ss{font-size:30px;font-weight:300;color:var(--mu);margin-left:8px;letter-spacing:0}
+#dt{font-size:30px;margin-top:14px;color:var(--ac)}
+#dt::first-letter{text-transform:uppercase}
+#alarm{margin-top:18px}
+.arow{display:flex;align-items:center}
+.spin{display:flex;flex-direction:column;align-items:center}
+.spin button{width:64px;height:44px;font-size:22px;color:var(--ac)}
+.spin span{font-size:52px;font-weight:300;font-variant-numeric:tabular-nums;line-height:1}
+.sep{font-size:48px;font-weight:300;margin:0 4px}
+.tog{margin-left:auto;padding:14px 22px;border-radius:30px;font-size:20px;background:var(--ln);color:var(--mu)}
+.tog.on{background:var(--ac);color:#fff}
+#next,#snd{font-size:15px;color:var(--mu);margin-top:10px}
+#wx .top{display:flex;align-items:center}
+#wico{font-size:64px;margin-right:14px}
+#wnow{font-size:72px;font-weight:200;line-height:1}
+#wdesc{font-size:24px;margin-left:18px}
+#wmeta{font-size:16px;color:var(--mu);margin-top:8px}
+#fc{display:flex;margin-top:14px}
+.fd{flex:1;text-align:center;background:var(--bg);border-radius:14px;padding:10px 4px;margin-right:10px}
+.fd:last-child{margin-right:0}
+.fd b{display:block;font-size:15px;font-weight:600;color:var(--mu)}
+.fd i{display:block;font-style:normal;font-size:30px;margin:2px 0}
+.fd span{font-size:16px}
+#ag{flex:1;margin-top:18px;display:flex;flex-direction:column;min-height:0}
+#evs{flex:1;overflow:hidden;position:relative}
+#evs iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+.dh{font-size:14px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--ac);margin:14px 0 6px 2px}
+.dh:first-child{margin-top:0}
+.dh+.msg{padding:0 0 4px 2px;font-size:16px}
+.ev{display:flex;align-items:center;padding:9px 14px;margin-bottom:6px;background:var(--bg);border-radius:12px}
+.evh{width:88px;flex:none;font-size:20px;font-weight:600}
+.ev.now .evh{color:var(--ac)}
+.evt{flex:1;min-width:0;font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg{color:var(--mu);font-size:18px;padding-top:12px}
+#mode{position:fixed;right:10px;bottom:6px;font-size:14px;color:var(--mu);padding:8px 12px;opacity:.7}
+#ring{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9;flex-direction:column;align-items:center;justify-content:center;
+background:#f6d9c8;color:#4b4a57;-webkit-animation:pulse 2s infinite;animation:pulse 2s infinite}
+#rt{font-size:150px;font-weight:200;line-height:1}
+#ring button{margin-top:26px;width:320px;padding:22px;border-radius:40px;font-size:28px;background:#fff}
+#ring button.main{background:var(--ac);color:#fff}
+@-webkit-keyframes pulse{0%,100%{background:#f6d9c8}50%{background:#f3ece0}}
+@keyframes pulse{0%,100%{background:#f6d9c8}50%{background:#f3ece0}}
+#rot{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:8;background:var(--bg);align-items:center;justify-content:center;font-size:28px;color:var(--mu);text-align:center;padding:40px}
+@media (orientation:portrait){#rot{display:flex}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="left">
+    <div class="card" id="clock">
+      <div><span id="hm">--:--</span><span id="ss"></span></div>
+      <div id="dt"></div>
+    </div>
+    <div class="card" id="alarm">
+      <div class="lbl"><span>Réveil · tous les jours</span></div>
+      <div class="arow">
+        <div class="spin"><button id="hu">▲</button><span id="ah">07</span><button id="hd">▼</button></div>
+        <div class="sep">:</div>
+        <div class="spin"><button id="mu">▲</button><span id="am">00</span><button id="md">▼</button></div>
+        <button class="tog" id="tog">Désactivé</button>
+      </div>
+      <div id="next"></div>
+      <div id="snd"></div>
+    </div>
+  </div>
+  <div id="right">
+    <div class="card" id="wx">
+      <div class="lbl"><span id="wcity">Météo</span><span id="wst"></span></div>
+      <div class="top"><div id="wico"></div><div id="wnow">--°</div><div id="wdesc"></div></div>
+      <div id="wmeta"></div>
+      <div id="fc"></div>
+    </div>
+    <div class="card" id="ag">
+      <div class="lbl"><span>Agenda</span><span id="cst"></span></div>
+      <div id="evs"></div>
+    </div>
+  </div>
+</div>
+<button id="mode">Auto</button>
+<div id="ring">
+  <div id="rt">--:--</div>
+  <button class="main" id="stop">Arrêter</button>
+  <button id="snz">Reporter 9 min</button>
+</div>
+<div id="rot">Tourne l’iPad en mode paysage<br>(verrouille la rotation depuis le Centre de contrôle)</div>
+
+<script>
+(function () {
+"use strict";
+
+/* ===== CONFIG ===== */
+var CFG = {
+  ville: "Vilvoorde",
+  lat: 50.93, lon: 4.43,
+  calUrl: "https://script.google.com/macros/s/AKfycbwS9K60PAd8nU33CzYEbJv5t8C0IJB6ATeUwtSZ0JGjJj2S6mpIv6EnrZg76-rHql3F/exec",
+  calKey: "",    // laisser vide : la clé est saisie une fois sur l’iPad (stockée dans localStorage)
+  calEmbed: ""   // alternative : URL d’intégration Google Agenda (agenda public)
+};
+
+var J = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+var M = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+function $(i) { return document.getElementById(i); }
+function p(n) { return n < 10 ? "0" + n : "" + n; }
+function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x !== undefined) e.textContent = x; return e; }
+function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+
+/* ===== MISES À JOUR UI : regroupées dans requestAnimationFrame ===== */
+/* Réveil, réseau et données restent sur setInterval : rAF est suspendu quand la page est masquée. */
+var RAF = window.requestAnimationFrame || window.webkitRequestAnimationFrame || function (f) { return setTimeout(f, 16); };
+var queue = [], pending = 0, cache = {}, texts = {}, textsDirty = false;
+function flush() {
+  var f = queue, i; queue = []; pending = 0;
+  for (i = 0; i < f.length; i++) { try { f[i](); } catch (e) {} }
+}
+function ui(fn) { queue.push(fn); if (!pending) pending = RAF(flush); }
+function txt(id, t) {            // n’écrit dans le DOM que si le texte a changé ; garde la dernière valeur par id
+  if (cache[id] === t) return;
+  cache[id] = t; texts[id] = t;
+  if (!textsDirty) {
+    textsDirty = true;
+    ui(function () { var k; textsDirty = false; for (k in texts) $(k).textContent = texts[k]; texts = {}; });
+  }
+}
+
+/* ===== RÉSEAU ===== */
+function getJSON(url, ok, ko) {
+  var x = new XMLHttpRequest();
+  x.open("GET", url, true);
+  x.timeout = 15000;
+  x.onload = function () {
+    if (x.status === 200) { try { ok(JSON.parse(x.responseText)); } catch (e) { ko(); } } else { ko(); }
+  };
+  x.onerror = x.ontimeout = ko;
+  x.send();
+}
+function jsonp(url, ok, ko) {
+  var cb = "cb" + new Date().getTime(), s = document.createElement("script"), done = false, tm;
+  function clean() {
+    try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+    if (s.parentNode) s.parentNode.removeChild(s);
+    clearTimeout(tm);
+  }
+  window[cb] = function (d) { done = true; clean(); ok(d); };
+  tm = setTimeout(function () { if (!done) { clean(); ko(); } }, 15000);
+  s.onerror = function () { clean(); ko(); };
+  s.src = url + "&callback=" + cb;
+  document.getElementsByTagName("head")[0].appendChild(s);
+}
+
+/* ===== MODE JOUR / NUIT ===== */
+var mode = "auto";
+var modeTxt = { auto: "Auto", night: "🌙 Nuit", day: "☀️ Jour" };
+function applyMode(d) {
+  var n = mode === "night" || (mode === "auto" && (d.getHours() >= 22 || d.getHours() < 7));
+  var c = n ? "night" : "";
+  if (cache.mode !== c) { cache.mode = c; ui(function () { document.body.className = c; }); }
+}
+$("mode").addEventListener("click", function () {
+  mode = mode === "auto" ? "night" : (mode === "night" ? "day" : "auto");
+  txt("mode", modeTxt[mode]);
+  applyMode(new Date());
+});
+
+/* ===== AUDIO (déverrouillé par un toucher, exigence iOS) ===== */
+var ctx = null, vol = 0.15;
+function unlock() {
+  if (!ctx) {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    ctx = new AC();
+  }
+  if (ctx.state !== "running" && ctx.resume) ctx.resume();
+  var b = ctx.createBuffer(1, 1, 22050), s = ctx.createBufferSource();
+  s.buffer = b; s.connect(ctx.destination);
+  if (s.start) s.start(0); else s.noteOn(0);
+  updateSound();
+}
+document.addEventListener("touchend", unlock, false);
+document.addEventListener("click", unlock, false);
+function updateSound() {
+  txt("snd", (ctx && ctx.state === "running") ? "🔔 Son prêt" : "🔇 Touche l’écran pour activer le son");
+}
+function beep() {
+  if (!ctx) return;
+  var o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime;
+  o.type = "sine"; o.frequency.value = 880;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.03);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(t); o.stop(t + 0.4);
+}
+
+/* ===== RÉVEIL ===== */
+var A = { h: 7, m: 0, on: false, last: "" };
+try {
+  var st = JSON.parse(localStorage.getItem("alarm"));
+  if (st) { A.h = st.h; A.m = st.m; A.on = !!st.on; A.last = st.last || ""; }
+} catch (e) {}
+function save() { try { localStorage.setItem("alarm", JSON.stringify(A)); } catch (e) {} }
+
+var ringing = false, rIv = null, rStop = null, snoozeUntil = 0;
+function pattern() { beep(); setTimeout(beep, 450); vol = Math.min(0.9, vol + 0.07); }
+function ring() {
+  ringing = true; vol = 0.15;
+  txt("rt", p(A.h) + ":" + p(A.m));
+  ui(function () { $("ring").style.display = "flex"; });
+  pattern();
+  rIv = setInterval(pattern, 2000);
+  rStop = setTimeout(stopRing, 10 * 60000);
+}
+function stopRing() {
+  ringing = false;
+  clearInterval(rIv); clearTimeout(rStop);
+  ui(function () { $("ring").style.display = "none"; });
+}
+$("stop").addEventListener("click", stopRing);
+$("snz").addEventListener("click", function () { stopRing(); snoozeUntil = new Date().getTime() + 9 * 60000; });
+
+function checkAlarm(d) {
+  if (!A.on || ringing) return;
+  if (snoozeUntil) { if (d.getTime() >= snoozeUntil) { snoozeUntil = 0; ring(); } return; }
+  var key = d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate();
+  if (d.getHours() === A.h && d.getMinutes() === A.m && A.last !== key) { A.last = key; save(); ring(); }
+}
+function showAlarm() {
+  txt("ah", p(A.h));
+  txt("am", p(A.m));
+  txt("tog", A.on ? "Activé" : "Désactivé");
+  var c = "tog" + (A.on ? " on" : "");
+  if (cache.togc !== c) { cache.togc = c; ui(function () { $("tog").className = c; }); }
+}
+function showNext(d) {
+  if (!A.on) { txt("next", ""); return; }
+  if (snoozeUntil) { var s = new Date(snoozeUntil); txt("next", "Reporté jusqu’à " + p(s.getHours()) + ":" + p(s.getMinutes())); return; }
+  var t = new Date(d.getTime()); t.setHours(A.h, A.m, 0, 0);
+  if (t.getTime() <= d.getTime()) t.setDate(t.getDate() + 1);
+  var mn = Math.round((t.getTime() - d.getTime()) / 60000);
+  txt("next", "Sonne dans " + Math.floor(mn / 60) + " h " + p(mn % 60));
+}
+function chg() { A.last = ""; snoozeUntil = 0; save(); showAlarm(); showNext(new Date()); }
+function bindSpin(btn, fn) {
+  var t, iv;
+  function stop() { clearTimeout(t); clearInterval(iv); }
+  function start(e) { e.preventDefault(); fn(); stop(); t = setTimeout(function () { iv = setInterval(fn, 120); }, 400); }
+  btn.addEventListener("touchstart", start, false);
+  btn.addEventListener("touchend", stop, false);
+  btn.addEventListener("touchcancel", stop, false);
+  btn.addEventListener("mousedown", start, false);
+  btn.addEventListener("mouseup", stop, false);
+  btn.addEventListener("mouseleave", stop, false);
+}
+bindSpin($("hu"), function () { A.h = (A.h + 1) % 24; chg(); });
+bindSpin($("hd"), function () { A.h = (A.h + 23) % 24; chg(); });
+bindSpin($("mu"), function () { A.m = (A.m + 1) % 60; chg(); });
+bindSpin($("md"), function () { A.m = (A.m + 59) % 60; chg(); });
+$("tog").addEventListener("click", function () { A.on = !A.on; chg(); });
+
+/* ===== HORLOGE ===== */
+function tick() {
+  var d = new Date();
+  txt("hm", p(d.getHours()) + ":" + p(d.getMinutes()));
+  txt("ss", p(d.getSeconds()));
+  txt("dt", J[d.getDay()] + " " + d.getDate() + " " + M[d.getMonth()]);
+  applyMode(d);
+  checkAlarm(d);
+  updateSound();
+  showNext(d);
+  // rechargement nocturne : évite les fuites mémoire sur un vieil iPad
+  if (d.getHours() === 4 && d.getMinutes() === 0 && d.getSeconds() === 0) location.reload();
+}
+
+/* ===== MÉTÉO (Open-Meteo, sans clé) ===== */
+function wx(c) {
+  if (c === 0) return ["☀️", "Dégagé"];
+  if (c <= 2) return ["⛅", "Peu nuageux"];
+  if (c === 3) return ["☁️", "Couvert"];
+  if (c <= 48) return ["🌫️", "Brouillard"];
+  if (c <= 57) return ["🌦️", "Bruine"];
+  if (c <= 67) return ["🌧️", "Pluie"];
+  if (c <= 77) return ["❄️", "Neige"];
+  if (c <= 82) return ["🌦️", "Averses"];
+  if (c <= 86) return ["❄️", "Averses de neige"];
+  return ["⛈️", "Orage"];
+}
+function loadWeather() {
+  txt("wcity", "Météo · " + CFG.ville);
+  var u = "https://api.open-meteo.com/v1/forecast?latitude=" + CFG.lat + "&longitude=" + CFG.lon +
+    "&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=4";
+  getJSON(u, function (r) {
+    txt("wst", "");
+    ui(function () {
+    var c = r.current_weather, d = r.daily, w = wx(c.weathercode), i, q, f, box;
+    $("wico").textContent = w[0];
+    $("wnow").textContent = Math.round(c.temperature) + "°";
+    $("wdesc").textContent = w[1];
+    $("wmeta").textContent = "Min " + Math.round(d.temperature_2m_min[0]) + "° · Max " + Math.round(d.temperature_2m_max[0]) +
+      "° · Pluie " + (d.precipitation_probability_max[0] || 0) + " % · Vent " + Math.round(c.windspeed) + " km/h";
+    box = $("fc"); clear(box);
+    for (i = 1; i < d.time.length; i++) {
+      q = d.time[i].split("-");
+      f = el("div", "fd");
+      f.appendChild(el("b", "", J[new Date(+q[0], +q[1] - 1, +q[2]).getDay()].slice(0, 3)));
+      f.appendChild(el("i", "", wx(d.weathercode[i])[0]));
+      f.appendChild(el("span", "", Math.round(d.temperature_2m_min[i]) + "° / " + Math.round(d.temperature_2m_max[i]) + "°"));
+      box.appendChild(f);
+    }
+    });
+  }, function () { txt("wst", "Hors ligne"); });
+}
+
+/* ===== AGENDA (Google Agenda via Apps Script, JSONP) ===== */
+function msg(t) { var b = $("evs"); clear(b); b.appendChild(el("div", "msg", t)); }
+function renderCalNow(ev) {
+  var BUDGET = 7;   // hauteur disponible : 1 par rendez-vous, 0,7 par en-tête de jour (à ajuster)
+  var now = new Date().getTime(), box = $("evs"), used = 0, last = -1, i, e, sd, s0, df, row;
+  var t0 = new Date(); t0.setHours(0, 0, 0, 0);
+  clear(box);
+  for (i = 0; i < ev.length; i++) {
+    e = ev[i];
+    if (e.e <= now) continue;
+    sd = new Date(e.s); s0 = new Date(e.s); s0.setHours(0, 0, 0, 0);
+    df = Math.max(0, Math.round((s0.getTime() - t0.getTime()) / 86400000));
+    if (df !== last) {
+      if (used + 1.7 > BUDGET) break;
+      if (last === -1 && df > 0) {   // rien aujourd’hui : on le dit quand même
+        box.appendChild(el("div", "dh", "Aujourd’hui"));
+        box.appendChild(el("div", "msg", "Rien de prévu"));
+        used += 1.4;
+        if (used + 1.7 > BUDGET) break;
+      }
+      box.appendChild(el("div", "dh", df === 0 ? "Aujourd’hui" : (df === 1 ? "Demain" : J[sd.getDay()] + " " + sd.getDate() + " " + M[sd.getMonth()])));
+      used += 0.7; last = df;
+    }
+    if (used + 1 > BUDGET) break;
+    row = el("div", "ev" + (!e.a && e.s <= now ? " now" : ""));
+    row.appendChild(el("div", "evh", e.a ? "Journée" : p(sd.getHours()) + ":" + p(sd.getMinutes())));
+    row.appendChild(el("div", "evt", e.t || "(sans titre)"));
+    box.appendChild(row); used += 1;
+  }
+  if (!box.firstChild) msg("Rien de prévu");
+}
+function lsGet(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
+function renderCal(ev) { txt("cst", ""); ui(function () { renderCalNow(ev); }); }
+function loadCal() {
+  if (CFG.calEmbed) {
+    if (!$("emb")) { var f = el("iframe"); f.id = "emb"; f.src = CFG.calEmbed; $("evs").appendChild(f); }
+    return;
+  }
+  if (!CFG.calUrl) { ui(function () { msg("Agenda non configuré"); }); return; }
+  var key = CFG.calKey || lsGet("calKey");
+  if (!key) { ui(function () { msg("Touche ici pour saisir la clé de l’agenda"); }); return; }
+  jsonp(CFG.calUrl + "?k=" + encodeURIComponent(key), renderCal, function () { txt("cst", "Hors ligne"); });
+}
+
+/* ===== DÉMARRAGE ===== */
+$("evs").addEventListener("click", function () {      // saisie (ou correction) de la clé de l’agenda
+  if (CFG.calKey || !CFG.calUrl) return;
+  if (lsGet("calKey") && cache.cst !== "Hors ligne") return;
+  var k = window.prompt("Clé de l’agenda (celle du script Google) :", lsGet("calKey"));
+  if (k) { try { localStorage.setItem("calKey", k); } catch (e) {} loadCal(); }
+});
+txt("mode", modeTxt[mode]);
+showAlarm(); tick(); setInterval(tick, 1000);
+loadWeather(); setInterval(loadWeather, 30 * 60000);
+loadCal(); setInterval(loadCal, 5 * 60000);
+})();
+</script>
+</body>
+</html>

@@ -34,6 +34,7 @@ button{font:inherit;color:inherit;border:0;background:none;padding:0;-webkit-app
 .sep{font-size:48px;font-weight:300;margin:0 4px}
 .tog{margin-left:auto;padding:14px 22px;border-radius:30px;font-size:20px;background:var(--ln);color:var(--mu)}
 .tog.on{background:var(--ac);color:#fff}
+.snm{font-size:15px;padding:6px 14px;border-radius:16px;background:var(--ln);color:var(--tx);text-transform:none;letter-spacing:0}
 #next,#snd{font-size:15px;color:var(--mu);margin-top:10px}
 #wx .top{display:flex;align-items:center}
 #wico{font-size:64px;margin-right:14px}
@@ -73,7 +74,7 @@ background:#f6d9c8;color:#4b4a57;-webkit-animation:pulse 2s infinite;animation:p
       <div id="dt"></div>
     </div>
     <div class="card" id="alarm">
-      <div class="lbl"><span>Réveil · tous les jours</span></div>
+      <div class="lbl"><span>Réveil · tous les jours</span><button id="snm" class="snm">♪ Bips</button></div>
       <div class="arow">
         <div class="spin"><button id="hu">▲</button><span id="ah">07</span><button id="hd">▼</button></div>
         <div class="sep">:</div>
@@ -202,33 +203,39 @@ document.addEventListener("click", unlock, false);
 function updateSound() {
   txt("snd", (ctx && ctx.state === "running") ? "🔔 Son prêt" : "🔇 Touche l’écran pour activer le son");
 }
-function beep() {
+function tone(f, at, dur, type, g) {
   if (!ctx) return;
-  var o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime;
-  o.type = "sine"; o.frequency.value = 880;
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(vol, t + 0.03);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
-  o.connect(g); g.connect(ctx.destination);
-  o.start(t); o.stop(t + 0.4);
+  var o = ctx.createOscillator(), a = ctx.createGain(), t = ctx.currentTime + at;
+  o.type = type; o.frequency.value = f;
+  a.gain.setValueAtTime(0.0001, t);
+  a.gain.exponentialRampToValueAtTime(Math.max(0.001, g * vol), t + 0.02);
+  a.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(a); a.connect(ctx.destination);
+  o.start(t); o.stop(t + dur + 0.05);
 }
+var SND = [
+  { n: "Bips", every: 2000, p: function () { tone(880, 0, 0.35, "sine", 1); tone(880, 0.45, 0.35, "sine", 1); } },
+  { n: "Carillon", every: 3000, p: function () { var f = [523, 659, 784, 1047], i; for (i = 0; i < 4; i++) tone(f[i], i * 0.25, 1.2, "sine", 0.8); } },
+  { n: "Cloche", every: 4000, p: function () { var m = [1, 2.76, 5.4, 8.93], g = [1, 0.5, 0.25, 0.12], d = [3, 2, 1.2, 0.8], i; for (i = 0; i < 4; i++) tone(440 * m[i], 0, d[i], "sine", g[i]); } },
+  { n: "Aube", every: 4500, p: function () { var f = [392, 494, 587, 784], i; for (i = 0; i < 4; i++) tone(f[i], i * 0.6, 1.6, "triangle", 0.7); } }
+];
 
 /* ===== RÉVEIL ===== */
-var A = { h: 7, m: 0, on: false, last: "" };
+var A = { h: 7, m: 0, on: false, last: "", snd: 0 };
 try {
   var st = JSON.parse(localStorage.getItem("alarm"));
-  if (st) { A.h = st.h; A.m = st.m; A.on = !!st.on; A.last = st.last || ""; }
+  if (st) { A.h = st.h; A.m = st.m; A.on = !!st.on; A.last = st.last || ""; A.snd = (st.snd | 0) % SND.length; }
 } catch (e) {}
 function save() { try { localStorage.setItem("alarm", JSON.stringify(A)); } catch (e) {} }
 
 var ringing = false, rIv = null, rStop = null, snoozeUntil = 0;
-function pattern() { beep(); setTimeout(beep, 450); vol = Math.min(0.9, vol + 0.07); }
+function pattern() { SND[A.snd].p(); vol = Math.min(0.9, vol + 0.07); }
 function ring() {
   ringing = true; vol = 0.15;
   txt("rt", p(A.h) + ":" + p(A.m));
   ui(function () { $("ring").style.display = "flex"; });
   pattern();
-  rIv = setInterval(pattern, 2000);
+  rIv = setInterval(pattern, SND[A.snd].every);
   rStop = setTimeout(stopRing, 10 * 60000);
 }
 function stopRing() {
@@ -249,6 +256,7 @@ function showAlarm() {
   txt("ah", p(A.h));
   txt("am", p(A.m));
   txt("tog", A.on ? "Activé" : "Désactivé");
+  txt("snm", "♪ " + SND[A.snd].n);
   var c = "tog" + (A.on ? " on" : "");
   if (cache.togc !== c) { cache.togc = c; ui(function () { $("tog").className = c; }); }
 }
@@ -277,6 +285,10 @@ bindSpin($("hd"), function () { A.h = (A.h + 23) % 24; chg(); });
 bindSpin($("mu"), function () { A.m = (A.m + 1) % 60; chg(); });
 bindSpin($("md"), function () { A.m = (A.m + 59) % 60; chg(); });
 $("tog").addEventListener("click", function () { A.on = !A.on; chg(); });
+$("snm").addEventListener("click", function () {      // change la sonnerie et la fait entendre
+  A.snd = (A.snd + 1) % SND.length; save(); showAlarm();
+  if (ctx && ctx.state === "running" && !ringing) { vol = 0.4; SND[A.snd].p(); }
+});
 
 /* ===== HORLOGE ===== */
 function tick() {
